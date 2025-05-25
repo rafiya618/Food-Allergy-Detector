@@ -5,6 +5,9 @@ from tkinter import ttk, messagebox, scrolledtext
 import json
 import os
 from datetime import datetime
+import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
 
 # --- Data Loading Functions ---
 
@@ -264,50 +267,63 @@ class FoodAllergyApp:
 
     def analyze_and_show_results(self):
         self.clear_main_frame()
-        # Ingredient-level analysis
-        ingredient_issue_map = defaultdict(int)
-        ingredient_food_map = defaultdict(set)
-        for entry in self.daily_data:
-            for food in entry['foods']:
-                allergies = self.foods_dict.get(food, [])
-                for allergy in allergies:
-                    ingredient_issue_map[allergy] += sum(1 for issue in entry['issues'] if issue in allergies_dict.get(allergy, []))
-                    ingredient_food_map[allergy].add(food)
-        # Adjust with user feedback history (model improvement)
-        adjustments = self.feedback_system.get_model_adjustments()
-        for ing, count in adjustments.items():
-            ingredient_issue_map[ing] += count  # boost score for confirmed culprits
 
-        max_score = max(ingredient_issue_map.values(), default=0)
-        probable_ingredients = [ing for ing, score in ingredient_issue_map.items() if score == max_score and score > 0]
-        culprit_foods = set()
-        for ing in probable_ingredients:
-            culprit_foods.update(ingredient_food_map[ing])
+        # --- AI/ML Training: Train a model to predict culprit food based on issues ---
+        # Prepare training data from previous feedback (if any)
+        X_train = []
+        y_train = []
+        feedback_data = self.feedback_system.get_feedback_stats().get('recent_feedback', [])
+        for feedback in feedback_data:
+            confirmed = feedback['feedback'].get('confirmed_ingredient')
+            foods = feedback['results'].get('culprit_foods', [])
+            issues = feedback['results'].get('probable_ingredients', [])
+            if confirmed and foods:
+                X_train.append(" ".join(issues))
+                y_train.append(foods[0])
+
+        # Add current user data as test sample
+        test_issues = []
+        for entry in self.daily_data:
+            test_issues.extend(entry['issues'])
+        test_issues_str = " ".join(sorted(set(test_issues)))
+
+        # If enough training data, train and predict
+        predicted_food = None
+        if len(X_train) >= 2:
+            vectorizer = CountVectorizer()
+            X_vec = vectorizer.fit_transform(X_train)
+            clf = MultinomialNB()
+            clf.fit(X_vec, y_train)
+            X_test = vectorizer.transform([test_issues_str])
+            predicted_food = clf.predict(X_test)[0]
+        else:
+            # Fallback: use most frequent food in user data
+            food_counts = Counter()
+            for entry in self.daily_data:
+                for food in entry['foods']:
+                    food_counts[food] += 1
+            predicted_food = food_counts.most_common(1)[0][0] if food_counts else None
 
         # --- Save analysis results for feedback ---
         self.analysis_results = {
-            'ingredient_issue_map': dict(ingredient_issue_map),
-            'probable_ingredients': probable_ingredients,
-            'culprit_foods': list(culprit_foods)
+            'predicted_food': predicted_food,
+            'user_issues': test_issues
         }
 
         # Results display
-        ttk.Label(self.main_frame, text="Analysis Results", style='Title.TLabel').pack(pady=10)
+        ttk.Label(self.main_frame, text="AI Analysis Results", style='Title.TLabel').pack(pady=10)
         notebook = ttk.Notebook(self.main_frame)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         summary_frame = ttk.Frame(notebook)
         notebook.add(summary_frame, text="Summary")
         summary_text = scrolledtext.ScrolledText(summary_frame, wrap=tk.WORD, font=('Arial', 11))
         summary_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        summary_text.insert(tk.END, "Culprit ingredient(s) likely causing your issues:\n")
-        if probable_ingredients:
-            for ing in probable_ingredients:
-                summary_text.insert(tk.END, f"  {ing.title()} (in foods: {', '.join(f.title() for f in ingredient_food_map[ing])})\n")
-            summary_text.insert(tk.END, "\nFoods to avoid:\n")
-            for food in culprit_foods:
-                summary_text.insert(tk.END, f"  {food.title()} (contains: {', '.join(self.foods_dict[food]).title()})\n")
-            # Suggest alternatives: foods that do not contain any culprit ingredient
-            alternative_foods = [food for food, ings in self.foods_dict.items() if not set(probable_ingredients).intersection(ings)]
+        summary_text.insert(tk.END, "Predicted culprit food based on your issues and AI learning:\n")
+        if predicted_food:
+            summary_text.insert(tk.END, f"  {predicted_food.title()}\n")
+            # Suggest alternatives: foods that do not share allergens with predicted food
+            culprit_allergens = set(self.foods_dict.get(predicted_food, []))
+            alternative_foods = [food for food, ings in self.foods_dict.items() if food != predicted_food and not culprit_allergens.intersection(ings)]
             summary_text.insert(tk.END, "\nSuggested alternative foods:\n")
             if alternative_foods:
                 for food in alternative_foods[:10]:
@@ -315,16 +331,14 @@ class FoodAllergyApp:
             else:
                 summary_text.insert(tk.END, "  No clear alternatives found.\n")
         else:
-            summary_text.insert(tk.END, "No clear culprit ingredient identified. Try collecting more data.\n")
+            summary_text.insert(tk.END, "No prediction could be made. Try collecting more data.\n")
         summary_text.config(state=tk.DISABLED)
-        
+
         # Details tab
         details_frame = ttk.Frame(notebook)
         notebook.add(details_frame, text="Details")
-        
         details_text = scrolledtext.ScrolledText(details_frame, wrap=tk.WORD, font=('Arial', 11))
         details_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
         details_text.insert(tk.END, "Daily Breakdown:\n\n")
         for day, entry in enumerate(self.daily_data, 1):
             details_text.insert(tk.END, f"Day {day}:\n")
@@ -332,66 +346,40 @@ class FoodAllergyApp:
             if entry['issues']:
                 details_text.insert(tk.END, f"  Issues: {', '.join(i.title() for i in entry['issues'])}\n")
             details_text.insert(tk.END, "\n")
-        
         details_text.config(state=tk.DISABLED)
-        
+
         # Feedback tab
         feedback_frame = ttk.Frame(notebook)
         notebook.add(feedback_frame, text="Feedback")
-        
-        ttk.Label(feedback_frame, text="Which ingredient do you think actually caused your issue?", font=('Arial', 12)).pack(pady=10)
-        # Ingredient options: show all ingredients that appeared in user's foods
-        all_ingredients = set()
-        for entry in self.daily_data:
-            for food in entry['foods']:
-                all_ingredients.update(self.foods_dict.get(food, []))
-        all_ingredients = sorted(all_ingredients)
-        self.feedback_ingredient_var = tk.StringVar()
-        ingredient_combo = ttk.Combobox(feedback_frame, values=[i.title() for i in all_ingredients], textvariable=self.feedback_ingredient_var, state="readonly", width=30)
-        ingredient_combo.pack(pady=5)
-        
+        ttk.Label(feedback_frame, text="Was the predicted food correct? If not, select the correct culprit food.", font=('Arial', 12)).pack(pady=10)
+        self.feedback_food_var = tk.StringVar()
+        food_options = sorted(set([f for entry in self.daily_data for f in entry['foods']]))
+        food_combo = ttk.Combobox(feedback_frame, values=[i.title() for i in food_options], textvariable=self.feedback_food_var, state="readonly", width=30)
+        food_combo.pack(pady=5)
         ttk.Label(feedback_frame, text="How accurate were these results?").pack(pady=10)
-        
         self.feedback_var = tk.IntVar(value=3)
         feedback_scale = ttk.Scale(feedback_frame, from_=1, to=5, variable=self.feedback_var, 
                                  command=lambda v: self.update_feedback_label(int(float(v))))
         feedback_scale.pack(fill=tk.X, padx=20, pady=5)
-        
         self.feedback_label = ttk.Label(feedback_frame, text="Neutral (3)")
         self.feedback_label.pack()
-        
         ttk.Label(feedback_frame, text="Additional comments:").pack(pady=5)
-        
         self.comments_text = scrolledtext.ScrolledText(feedback_frame, wrap=tk.WORD, height=5, font=('Arial', 11))
         self.comments_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
-        submit_btn = ttk.Button(feedback_frame, text="Submit Feedback", command=self.submit_feedback)
+        submit_btn = ttk.Button(feedback_frame, text="Submit Feedback", command=self.submit_feedback_ai)
         submit_btn.pack(pady=10)
-        
-        # Action buttons
         btn_frame = ttk.Frame(self.main_frame)
         btn_frame.pack(pady=10)
-        
         ttk.Button(btn_frame, text="New Analysis", command=self.reset_analysis).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=5)
 
-    def update_feedback_label(self, value):
-        labels = {
-            1: "Very Inaccurate (1)",
-            2: "Somewhat Inaccurate (2)",
-            3: "Neutral (3)",
-            4: "Somewhat Accurate (4)",
-            5: "Very Accurate (5)"
-        }
-        self.feedback_label.config(text=labels.get(value, "Neutral (3)"))
-
-    def submit_feedback(self):
-        confirmed_ingredient = self.feedback_ingredient_var.get().lower() if self.feedback_ingredient_var.get() else ""
+    def submit_feedback_ai(self):
+        confirmed_food = self.feedback_food_var.get().lower() if self.feedback_food_var.get() else ""
         feedback = {
             'rating': self.feedback_var.get(),
             'comments': self.comments_text.get("1.0", tk.END).strip(),
             'timestamp': datetime.now().isoformat(),
-            'confirmed_ingredient': confirmed_ingredient
+            'confirmed_ingredient': confirmed_food  # For AI, treat food as "ingredient"
         }
         self.feedback_system.save_feedback(feedback, self.analysis_results)
         messagebox.showinfo("Thank You", "Your feedback has been submitted and will help improve future analysis!")
