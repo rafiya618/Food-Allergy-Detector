@@ -1,0 +1,22 @@
+Allergy,Related_Diseases_or_Issues
+Dairy,Lactose Intolerance; Bloating; Diarrhea; Skin Rash; Acne; Sinus Congestion; Anaphylaxis; Migraine; Inflammation; Wheezing; Vomiting; Abdominal Pain; Eczema
+Nuts,Hives; Swelling; Anaphylactic Shock; Eczema; Asthma; Digestive Issues; Tingling in the Mouth; Nausea; Drop in Blood Pressure; Vomiting; Diarrhea; Itching; Breathing Difficulty
+Tree Nuts,Hives; Anaphylaxis; Swelling; Asthma; Eczema; Nausea; Vomiting; Diarrhea; Abdominal Pain; Itching; Breathing Difficulty; Drop in Blood Pressure
+Gluten,Celiac Disease; Bloating; Constipation; Fatigue; Anemia; Depression; Skin Rash; Headache; Joint Pain; Dermatitis Herpetiformis; Weight Loss; Mouth Ulcers
+Shellfish,Anaphylaxis; Swelling of the Lips; Abdominal Pain; Vomiting; Skin Irritations; Breathing Difficulty; Drop in Blood Pressure; Hives; Nausea; Diarrhea; Itching; Eczema
+Eggs,Hives; Skin Inflammation; Nasal Congestion; Digestive Discomfort; Asthma; Anaphylaxis; Eczema; Headaches; Vomiting; Diarrhea; Abdominal Pain; Itching
+Soy,Runny Nose; Abdominal Cramps; Hives; Itching; Breathing Problems; Anaphylaxis; Fatigue; Skin Rash; Vomiting; Diarrhea; Swelling; Eczema
+Fish,Vomiting; Diarrhea; Anaphylaxis; Swelling; Nasal Congestion; Skin Rash; Low Blood Pressure; Wheezing; Hives; Itching; Abdominal Pain; Eczema
+Wheat,Hives; Asthma; Nasal Congestion; Anaphylaxis; Celiac Disease; Eczema; Digestive Issues; Headache; Itching; Vomiting; Diarrhea; Abdominal Pain
+Peanuts,Anaphylaxis; Hives; Swelling; Asthma; Eczema; Nausea; Vomiting; Drop in Blood Pressure; Breathing Difficulty; Diarrhea; Itching; Abdominal Pain
+Sesame,Hives; Anaphylaxis; Swelling; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema; Breathing Difficulty
+Sulfites,Asthma; Hives; Anaphylaxis; Breathing Difficulty; Headache; Nausea; Flushing; Low Blood Pressure; Wheezing; Skin Rash; Stomach Cramps
+Mustard,Hives; Anaphylaxis; Swelling; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema; Breathing Difficulty
+Celery,Hives; Anaphylaxis; Swelling; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema; Oral Allergy Syndrome
+Lupin,Hives; Anaphylaxis; Swelling; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema
+Corn,Hives; Anaphylaxis; Swelling; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema; Headache
+Rice,Hives; Anaphylaxis; Swelling; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema
+Fruit,Hives; Oral Allergy Syndrome; Itching; Swelling; Anaphylaxis; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema
+Meat,Hives; Anaphylaxis; Swelling; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Eczema; Alpha-gal Syndrome
+Food Additives,Hives; Anaphylaxis; Asthma; Itching; Nausea; Vomiting; Abdominal Pain; Diarrhea; Headache; Hyperactivity (in children)
+None,No known allergic diseases or symptoms
